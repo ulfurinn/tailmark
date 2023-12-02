@@ -1,0 +1,13 @@
+_build
+.elixir_ls
+.fetch
+cover
+deps
+doc
+tmp
+
+erl_crash.dump
+*.ez
+
+commonmark_report.txt
+test/demo_test.exs
