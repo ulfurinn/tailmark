@@ -51,7 +51,7 @@ The main use case for this project is [Tall Tale](https://github.com/ulfurinn/ta
 ### Extensions
 
 - [x] YAML frontmatter (through `yaml_elixir`)
-- tables
+- [ ] tables
 - Obsidian:
   - [ ] Wiki-style links
   - [ ] transclusions
