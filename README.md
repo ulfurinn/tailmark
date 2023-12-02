@@ -1,5 +1,7 @@
 # Tailmark
 
+[![Elixir CI](https://github.com/ulfurinn/tailmark/actions/workflows/elixir.yml/badge.svg?event=push)](https://github.com/ulfurinn/tailmark/actions/workflows/elixir.yml)
+
 This is a Markdown parser in Elixir.
 
 ## Project goals
@@ -12,7 +14,7 @@ The code is largely ported to Elixir from the reference [commonmark.js](https://
 
 Stick to `earmark` for now. This is not ready.
 
-The main use case for this project is [Tall Tale](https://github.com/ulfurinn/talltale), an experimental interactive fiction engine that uses Obsidian as its primary authoring tool, and satisfying its requirements will be the highest priority.
+The main use case for this project is [Tall Tale](https://github.com/ulfurinn/tailmark), an experimental interactive fiction engine that uses Obsidian as its primary authoring tool, and satisfying its requirements will be the highest priority.
 
 ## Progress
 
