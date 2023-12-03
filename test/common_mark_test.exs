@@ -76,9 +76,18 @@ defmodule Tailmark.CommonMarkTest do
 
     state
     |> Enum.each(fn {section, counter} ->
+      percentage = Float.round(100.0 * counter.passed / counter.total, 1)
+
+      percentage_report =
+        if percentage > 90 do
+          "**#{percentage} %**"
+        else
+          "#{percentage} %"
+        end
+
       IO.puts(
         f,
-        "| #{section} | #{counter.total} | #{counter.passed} (**#{Float.round(100.0 * counter.passed / counter.total, 1)} %**) |"
+        "| #{section} | #{counter.total} | #{counter.passed} (#{percentage_report}) |"
       )
     end)
 
@@ -87,9 +96,18 @@ defmodule Tailmark.CommonMarkTest do
         %{total: acc.total + counter.total, passed: acc.passed + counter.passed}
       end)
 
+    percentage = Float.round(100.0 * sum.passed / sum.total, 1)
+
+    percentage_report =
+      if percentage > 90 do
+        "**#{percentage} %**"
+      else
+        "#{percentage} %"
+      end
+
     IO.puts(
       f,
-      "| **TOTAL** | #{sum.total} | #{sum.passed} (**#{Float.round(100.0 * sum.passed / sum.total, 1)} %**) |"
+      "| **TOTAL** | #{sum.total} | #{sum.passed} (#{percentage_report}) |"
     )
 
     File.close(f)
