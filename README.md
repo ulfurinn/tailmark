@@ -22,33 +22,33 @@ The main use case for this project is [Tall Tale](https://github.com/ulfurinn/ta
 
 | Section | Total | Passed |
 | ------- | ----- | ------ |
-| ATX headings | 18 | 13 (**72.2 %**) |
+| ATX headings | 18 | 14 (**77.8 %**) |
 | Autolinks | 19 | 2 (**10.5 %**) |
-| Backslash escapes | 13 | 2 (**15.4 %**) |
+| Backslash escapes | 13 | 3 (**23.1 %**) |
 | Blank lines | 1 | 1 (**100.0 %**) |
-| Block quotes | 25 | 21 (**84.0 %**) |
+| Block quotes | 25 | 23 (**92.0 %**) |
 | Code spans | 22 | 3 (**13.6 %**) |
 | Emphasis and strong emphasis | 131 | 37 (**28.2 %**) |
 | Entity and numeric character references | 17 | 1 (**5.9 %**) |
-| Fenced code blocks | 29 | 18 (**62.1 %**) |
+| Fenced code blocks | 29 | 19 (**65.5 %**) |
 | HTML blocks | 44 | 1 (**2.3 %**) |
 | Hard line breaks | 15 | 5 (**33.3 %**) |
 | Images | 22 | 0 (**0.0 %**) |
-| Indented code blocks | 12 | 1 (**8.3 %**) |
+| Indented code blocks | 12 | 8 (**66.7 %**) |
 | Inlines | 1 | 0 (**0.0 %**) |
 | Link reference definitions | 27 | 5 (**18.5 %**) |
 | Links | 90 | 12 (**13.3 %**) |
-| List items | 48 | 5 (**10.4 %**) |
+| List items | 48 | 7 (**14.6 %**) |
 | Lists | 26 | 1 (**3.8 %**) |
-| Paragraphs | 8 | 6 (**75.0 %**) |
+| Paragraphs | 8 | 7 (**87.5 %**) |
 | Precedence | 1 | 0 (**0.0 %**) |
 | Raw HTML | 21 | 12 (**57.1 %**) |
-| Setext headings | 27 | 8 (**29.6 %**) |
+| Setext headings | 27 | 10 (**37.0 %**) |
 | Soft line breaks | 2 | 1 (**50.0 %**) |
-| Tabs | 11 | 2 (**18.2 %**) |
+| Tabs | 11 | 7 (**63.6 %**) |
 | Textual content | 3 | 3 (**100.0 %**) |
-| Thematic breaks | 19 | 13 (**68.4 %**) |
-| **TOTAL** | 652 | 173 (**26.5 %**) |
+| Thematic breaks | 19 | 14 (**73.7 %**) |
+| **TOTAL** | 652 | 196 (**30.1 %**) |
 
 ### Extensions
 

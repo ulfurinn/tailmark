@@ -255,6 +255,24 @@ defmodule Tailmark.Parser do
     end
   end
 
+  defp continue(state, %{type: :code, fenced: false}) do
+    cond do
+      state.indent >= @codeIndent ->
+        state
+        |> advance_offset(@codeIndent, true)
+        |> matched()
+
+      blank?(state) ->
+        state
+        |> advance_next_nonspace()
+        |> matched()
+
+      true ->
+        state
+        |> not_matched()
+    end
+  end
+
   defp continue(state, %{type: :blockquote}) do
     if !indented?(state) && peek(state, :next_nonspace) == ">" do
       state =
@@ -383,7 +401,18 @@ defmodule Tailmark.Parser do
   end
 
   defp start_list_item(state, _container), do: not_matched(state)
-  defp start_indented_code(state, _container), do: not_matched(state)
+
+  defp start_indented_code(state, _container) do
+    if indented?(state) && tip(state).type != :paragraph && !blank?(state) do
+      state
+      |> advance_offset(@codeIndent, true)
+      |> close_unmatched()
+      |> add_child(:code, :offset, fn node, _ -> %{node | fenced: false} end)
+      |> leaf()
+    else
+      not_matched(state)
+    end
+  end
 
   defp finalize(state, node, _line_number) do
     above = node.parent
@@ -419,6 +448,18 @@ defmodule Tailmark.Parser do
     %{node | info: info, content: rest}
   end
 
+  defp finalize(node = %{type: :code, fenced: false}) do
+    content =
+      node.content
+      |> String.split("\n")
+      |> Enum.reverse()
+      |> Enum.drop_while(fn line -> String.trim(line) == "" end)
+      |> Enum.reverse()
+      |> Enum.join("\n")
+
+    %{node | content: content <> "\n"}
+  end
+
   defp finalize(node = %{type: :blockquote}), do: node
   defp finalize(node = %{type: :paragraph}), do: node
   defp finalize(node = %{type: :break}), do: node
@@ -446,10 +487,6 @@ defmodule Tailmark.Parser do
     |> update_node(state.tip, fn tip, _ -> %{tip | children: tip.children ++ [node.ref]} end)
     |> put_tip(node.ref)
     |> update_node(node.ref, constructor)
-  end
-
-  defp indented?(state) do
-    state.indent >= @codeIndent
   end
 
   defp drop_last_empty_line(lines) do
@@ -621,6 +658,10 @@ defmodule Tailmark.Parser do
   defp update_node(state, ref, fun) do
     %{state | nodes: Map.update!(state.nodes, ref, fn node -> fun.(node, state) end)}
   end
+
+  defp indented?(state), do: state.indent >= @codeIndent
+  def blank?(%__MODULE__{blank: blank}), do: blank
+  def tip(%__MODULE__{tip: tip, nodes: nodes}), do: nodes[tip]
 
   defp matched(state), do: {:matched, state}
   defp not_matched(state), do: {:not_matched, state}
