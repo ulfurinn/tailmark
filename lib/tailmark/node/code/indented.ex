@@ -1,7 +1,8 @@
 defmodule Tailmark.Node.Code.Indented do
-  defstruct [:ref, :parent, content: "", open?: true]
+  defstruct [:sourcepos, :ref, :parent, content: "", open?: true]
 
-  def new(parent), do: %__MODULE__{ref: make_ref(), parent: parent}
+  def new(parent, sourcepos),
+    do: %__MODULE__{sourcepos: sourcepos, ref: make_ref(), parent: parent}
 
   defimpl Tailmark.ParseNode do
     import Tailmark.Parser
@@ -39,15 +40,23 @@ defmodule Tailmark.Node.Code.Indented do
     end
 
     def finalize(node = %@for{content: content}, _) do
-      content =
+      lines =
         content
         |> String.split("\n")
         |> Enum.reverse()
         |> Enum.drop_while(fn line -> String.trim(line) == "" end)
         |> Enum.reverse()
+
+      content =
+        lines
         |> Enum.join("\n")
 
-      %@for{node | content: content <> "\n"}
+      to = %{
+        line: node.sourcepos.from.line + Enum.count(lines) - 1,
+        col: node.sourcepos.from.col + String.length(List.last(lines)) - 1
+      }
+
+      %@for{node | content: content <> "\n", sourcepos: %{node.sourcepos | to: to}}
     end
 
     def can_contain?(_, _), do: false

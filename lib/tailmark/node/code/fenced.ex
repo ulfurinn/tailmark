@@ -1,5 +1,6 @@
 defmodule Tailmark.Node.Code.Fenced do
   defstruct [
+    :sourcepos,
     :ref,
     :parent,
     :fenced,
@@ -11,7 +12,10 @@ defmodule Tailmark.Node.Code.Fenced do
     open?: true
   ]
 
-  def new(parent), do: %__MODULE__{ref: make_ref(), parent: parent}
+  def new(_, nil), do: raise("sourcepos is required")
+
+  def new(parent, sourcepos),
+    do: %__MODULE__{sourcepos: sourcepos, ref: make_ref(), parent: parent}
 
   defimpl Tailmark.ParseNode do
     import Tailmark.Parser

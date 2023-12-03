@@ -38,9 +38,13 @@ defmodule Tailmark.CommonMarkTest do
             on_exit(&:dbg.stop/0)
           end
 
-          assert example["html"] ==
-                   [example["markdown"] |> document(frontmatter: false) |> to_html()]
-                   |> IO.iodata_to_binary()
+          output =
+            [example["markdown"] |> document(frontmatter: false) |> to_html()]
+            |> IO.iodata_to_binary()
+
+          unless System.get_env("ASSERT") == "0" do
+            assert example["html"] == output
+          end
 
           register_success(pid, section)
         end

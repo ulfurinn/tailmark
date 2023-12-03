@@ -1,5 +1,5 @@
 defmodule Tailmark.Document do
-  defstruct [:frontmatter, :ref, :parent, children: [], open?: true, type: :document]
+  defstruct [:frontmatter, :sourcepos, :ref, :parent, children: [], open?: true, type: :document]
 
   defimpl Tailmark.ParseNode do
     import Tailmark.Parser

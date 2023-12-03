@@ -39,6 +39,7 @@ defmodule Tailmark.Parser do
       end
 
     document = %Document{
+      sourcepos: %{from: %{line: 1, col: 1}, to: %{line: 0, col: 0}},
       ref: make_ref(),
       frontmatter: frontmatter
     }
@@ -68,14 +69,16 @@ defmodule Tailmark.Parser do
 
   defp parse_blocks(state, lines) do
     lines
+    |> Enum.with_index(1)
     |> Enum.reduce(state, &incorporate_line(&2, &1))
   end
 
-  defp incorporate_line(state, line) do
+  defp incorporate_line(state, {line, index}) do
     state =
       state
       |> put_old_tip()
       |> put_current_line(line)
+      |> put_line_number(index)
       |> put_offset(0)
       |> put_column(0)
       |> put_blank(false)
@@ -228,12 +231,19 @@ defmodule Tailmark.Parser do
     end
   end
 
-  def finalize(state, node, _line_number) do
+  def finalize(state, node, line_number) do
     above = node.parent
 
     state
     |> update_node(node.ref, fn node, state ->
-      %{node | open?: false}
+      %{
+        node
+        | open?: false,
+          sourcepos: %{
+            node.sourcepos
+            | to: %{line: line_number, col: String.length(state.current_line)}
+          }
+      }
       |> ParseNode.finalize(state)
     end)
     |> put_tip(above)
@@ -257,13 +267,24 @@ defmodule Tailmark.Parser do
     end
   end
 
-  def add_child(state, module, _offset, constructor \\ fn node, _state -> node end) do
+  def add_child(state, module, position, constructor \\ fn node, _state -> node end) do
     state =
       state
       |> finalize_until_can_accept_type(module)
 
-    # column_number = offset + 1
-    node = module.new(state.tip)
+    offset =
+      case position do
+        :next_nonspace -> state.next_nonspace
+        :offset -> state.offset
+      end
+
+    column_number = offset + 1
+
+    node =
+      module.new(state.tip, %{
+        from: %{line: state.line_number, col: column_number},
+        to: %{line: 0, col: 0}
+      })
 
     state
     |> put_node(node)
@@ -417,24 +438,25 @@ defmodule Tailmark.Parser do
 
   def close_unmatched(state) do
     state
-    |> close_one_unmatched()
+    |> close_deepest_unmatched()
     |> put_all_closed(true)
   end
 
-  defp close_one_unmatched(state = %{old_tip: ref, last_matched_container: ref}), do: state
+  defp close_deepest_unmatched(state = %{old_tip: ref, last_matched_container: ref}), do: state
 
-  defp close_one_unmatched(state) do
+  defp close_deepest_unmatched(state) do
     old_tip = state.nodes[state.old_tip]
 
     state
     |> finalize(old_tip, state.line_number - 1)
     |> put_old_tip(old_tip.parent)
-    |> close_one_unmatched()
+    |> close_deepest_unmatched()
   end
 
   def put_offset(state, value), do: %{state | offset: value}
   def put_column(state, value), do: %{state | column: value}
   defp put_current_line(state, value), do: %{state | current_line: value}
+  defp put_line_number(state, value), do: %{state | line_number: value}
   defp put_tip(state, value), do: %{state | tip: value}
   defp put_old_tip(state), do: %{state | old_tip: state.tip}
   defp put_old_tip(state, value), do: %{state | old_tip: value}
@@ -449,6 +471,8 @@ defmodule Tailmark.Parser do
 
   defp inc_column(state, column), do: %{state | column: state.column + column}
   defp inc_offset(state, offset), do: %{state | offset: state.offset + offset}
+
+  def get_node(%__MODULE__{nodes: nodes}, ref), do: nodes[ref]
 
   def update_node(state, ref, fun) do
     node = state.nodes[ref]

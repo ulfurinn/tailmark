@@ -1,7 +1,8 @@
 defmodule Tailmark.Node.Break do
-  defstruct [:ref, :parent, open?: true]
+  defstruct [:sourcepos, :ref, :parent, open?: true]
 
-  def new(parent), do: %__MODULE__{ref: make_ref(), parent: parent}
+  def new(parent, sourcepos),
+    do: %__MODULE__{sourcepos: sourcepos, ref: make_ref(), parent: parent}
 
   defimpl Tailmark.ParseNode do
     import Tailmark.Parser

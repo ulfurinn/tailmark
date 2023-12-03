@@ -34,21 +34,21 @@ The main use case for this project is [Tall Tale](https://github.com/ulfurinn/ta
 | HTML blocks | 44 | 1 (**2.3 %**) |
 | Hard line breaks | 15 | 5 (**33.3 %**) |
 | Images | 22 | 0 (**0.0 %**) |
-| Indented code blocks | 12 | 9 (**75.0 %**) |
+| Indented code blocks | 12 | 11 (**91.7 %**) |
 | Inlines | 1 | 0 (**0.0 %**) |
 | Link reference definitions | 27 | 5 (**18.5 %**) |
 | Links | 90 | 12 (**13.3 %**) |
-| List items | 48 | 31 (**64.6 %**) |
-| Lists | 26 | 12 (**46.2 %**) |
+| List items | 48 | 47 (**97.9 %**) |
+| Lists | 26 | 23 (**88.5 %**) |
 | Paragraphs | 8 | 7 (**87.5 %**) |
 | Precedence | 1 | 1 (**100.0 %**) |
 | Raw HTML | 21 | 12 (**57.1 %**) |
 | Setext headings | 27 | 21 (**77.8 %**) |
 | Soft line breaks | 2 | 1 (**50.0 %**) |
-| Tabs | 11 | 9 (**81.8 %**) |
+| Tabs | 11 | 11 (**100.0 %**) |
 | Textual content | 3 | 3 (**100.0 %**) |
 | Thematic breaks | 19 | 18 (**94.7 %**) |
-| **TOTAL** | 652 | 252 (**38.7 %**) |
+| **TOTAL** | 652 | 283 (**43.4 %**) |
 
 ### Extensions
 

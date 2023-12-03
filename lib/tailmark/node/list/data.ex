@@ -3,7 +3,6 @@ defmodule Tailmark.Node.List.Data do
     :type,
     :marker_offset,
     :marker_length,
-    tight: true,
     bullet_char: nil,
     start: 1,
     delimiter: nil,
