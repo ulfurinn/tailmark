@@ -38,7 +38,7 @@ defmodule Tailmark.Node.Code.Indented do
       end
     end
 
-    def finalize(node = %@for{content: content}) do
+    def finalize(node = %@for{content: content}, _) do
       content =
         content
         |> String.split("\n")

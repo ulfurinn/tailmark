@@ -9,7 +9,7 @@ defmodule Tailmark.Document do
     def start(_, parser, _), do: matched(parser)
     def continue(_, parser), do: matched(parser)
 
-    def finalize(node), do: node
+    def finalize(node, _), do: node
     def can_contain?(_, module), do: module != Tailmark.Node.ListItem
   end
 end

@@ -1,5 +1,5 @@
 defmodule Tailmark.Node.Paragraph do
-  defstruct [:ref, :parent, content: "", open?: true]
+  defstruct [:ref, :parent, content: "", block: true, open?: true]
 
   def new(parent), do: %__MODULE__{ref: make_ref(), parent: parent}
 
@@ -13,7 +13,7 @@ defmodule Tailmark.Node.Paragraph do
       if parser.blank, do: not_matched(parser), else: matched(parser)
     end
 
-    def finalize(node), do: node
+    def finalize(node, _), do: node
     def can_contain?(_, _), do: false
   end
 end

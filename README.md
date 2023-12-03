@@ -26,7 +26,7 @@ The main use case for this project is [Tall Tale](https://github.com/ulfurinn/ta
 | Autolinks | 19 | 2 (**10.5 %**) |
 | Backslash escapes | 13 | 3 (**23.1 %**) |
 | Blank lines | 1 | 1 (**100.0 %**) |
-| Block quotes | 25 | 23 (**92.0 %**) |
+| Block quotes | 25 | 24 (**96.0 %**) |
 | Code spans | 22 | 3 (**13.6 %**) |
 | Emphasis and strong emphasis | 131 | 37 (**28.2 %**) |
 | Entity and numeric character references | 17 | 1 (**5.9 %**) |
@@ -38,17 +38,17 @@ The main use case for this project is [Tall Tale](https://github.com/ulfurinn/ta
 | Inlines | 1 | 0 (**0.0 %**) |
 | Link reference definitions | 27 | 5 (**18.5 %**) |
 | Links | 90 | 12 (**13.3 %**) |
-| List items | 48 | 7 (**14.6 %**) |
-| Lists | 26 | 1 (**3.8 %**) |
+| List items | 48 | 31 (**64.6 %**) |
+| Lists | 26 | 12 (**46.2 %**) |
 | Paragraphs | 8 | 7 (**87.5 %**) |
-| Precedence | 1 | 0 (**0.0 %**) |
+| Precedence | 1 | 1 (**100.0 %**) |
 | Raw HTML | 21 | 12 (**57.1 %**) |
-| Setext headings | 27 | 19 (**70.4 %**) |
+| Setext headings | 27 | 21 (**77.8 %**) |
 | Soft line breaks | 2 | 1 (**50.0 %**) |
-| Tabs | 11 | 7 (**63.6 %**) |
+| Tabs | 11 | 9 (**81.8 %**) |
 | Textual content | 3 | 3 (**100.0 %**) |
-| Thematic breaks | 19 | 15 (**78.9 %**) |
-| **TOTAL** | 652 | 208 (**31.9 %**) |
+| Thematic breaks | 19 | 18 (**94.7 %**) |
+| **TOTAL** | 652 | 252 (**38.7 %**) |
 
 ### Extensions
 

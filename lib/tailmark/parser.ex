@@ -51,7 +51,7 @@ defmodule Tailmark.Parser do
         # Tailmark.Node.HTML,
         Tailmark.Node.Heading.Setext,
         Tailmark.Node.Break,
-        # Tailmark.Node.List,
+        Tailmark.Node.ListItem,
         Tailmark.Node.Code.Indented
       ],
       document: document.ref,
@@ -215,7 +215,7 @@ defmodule Tailmark.Parser do
           :leaf ->
             {:halt, {true, state, %{start_state | container: state.tip, matched_leaf: true}}}
 
-          _ ->
+          :not_matched ->
             {:cont, {false, state, start_state}}
         end
       end)
@@ -232,9 +232,9 @@ defmodule Tailmark.Parser do
     above = node.parent
 
     state
-    |> update_node(node.ref, fn node, _ ->
+    |> update_node(node.ref, fn node, state ->
       %{node | open?: false}
-      |> ParseNode.finalize()
+      |> ParseNode.finalize(state)
     end)
     |> put_tip(above)
   end
@@ -309,20 +309,28 @@ defmodule Tailmark.Parser do
     node
   end
 
-  def peek(%{current_line: current_line, next_nonspace: next_nonspace}, :next_nonspace) do
-    String.at(current_line, next_nonspace)
+  def peek(state, position, extra \\ 0)
+
+  def peek(
+        %{current_line: current_line, next_nonspace: next_nonspace},
+        :next_nonspace,
+        extra
+      ) do
+    String.at(current_line, next_nonspace + extra)
   end
 
-  def peek(%{current_line: current_line, offset: offset}, :offset) do
-    String.at(current_line, offset)
+  def peek(%{current_line: current_line, offset: offset}, :offset, extra) do
+    String.at(current_line, offset + extra)
   end
 
-  def rest(%{current_line: current_line, next_nonspace: next_nonspace}, :next_nonspace) do
-    String.split_at(current_line, next_nonspace) |> elem(1)
+  def rest(parser, position, extra \\ 0)
+
+  def rest(%{current_line: current_line, next_nonspace: next_nonspace}, :next_nonspace, extra) do
+    String.split_at(current_line, next_nonspace + extra) |> elem(1)
   end
 
-  def rest(%{current_line: current_line, offset: offset}, :offset) do
-    String.split_at(current_line, offset) |> elem(1)
+  def rest(%{current_line: current_line, offset: offset}, :offset, extra) do
+    String.split_at(current_line, offset + extra) |> elem(1)
   end
 
   defp find_next_nonspace(state) do
@@ -424,12 +432,12 @@ defmodule Tailmark.Parser do
     |> close_one_unmatched()
   end
 
+  def put_offset(state, value), do: %{state | offset: value}
+  def put_column(state, value), do: %{state | column: value}
   defp put_current_line(state, value), do: %{state | current_line: value}
   defp put_tip(state, value), do: %{state | tip: value}
   defp put_old_tip(state), do: %{state | old_tip: state.tip}
   defp put_old_tip(state, value), do: %{state | old_tip: value}
-  defp put_offset(state, value), do: %{state | offset: value}
-  defp put_column(state, value), do: %{state | column: value}
   defp put_blank(state, value), do: %{state | blank: value}
   defp put_partially_consumed_tab(state, value), do: %{state | partially_consumed_tab: value}
   defp put_next_nonspace(state, value), do: %{state | next_nonspace: value}
@@ -443,7 +451,16 @@ defmodule Tailmark.Parser do
   defp inc_offset(state, offset), do: %{state | offset: state.offset + offset}
 
   def update_node(state, ref, fun) do
-    %{state | nodes: Map.update!(state.nodes, ref, fn node -> fun.(node, state) end)}
+    node = state.nodes[ref]
+    updated = fun.(node, state)
+
+    case updated do
+      {node, state} ->
+        %{state | nodes: Map.put(state.nodes, ref, node)}
+
+      node ->
+        %{state | nodes: Map.put(state.nodes, ref, node)}
+    end
   end
 
   def indented?(state), do: state.indent >= @codeIndent

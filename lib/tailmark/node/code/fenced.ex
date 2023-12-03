@@ -84,7 +84,7 @@ defmodule Tailmark.Node.Code.Fenced do
       end
     end
 
-    def finalize(node = %@for{content: content}) do
+    def finalize(node = %@for{content: content}, _) do
       [info, rest] = String.split(content, "\n", parts: 2)
 
       info =

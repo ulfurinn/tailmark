@@ -32,7 +32,7 @@ defmodule Tailmark.Node.Blockquote do
       end
     end
 
-    def finalize(node), do: node
+    def finalize(node, _), do: node
     def can_contain?(_, module), do: module != Tailmark.Node.ListItem
   end
 end

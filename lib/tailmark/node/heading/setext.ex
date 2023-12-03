@@ -45,7 +45,7 @@ defmodule Tailmark.Node.Heading.Setext do
     end
 
     def continue(_, parser), do: not_matched(parser)
-    def finalize(node), do: node
+    def finalize(node, _), do: node
     def can_contain?(_, _), do: false
   end
 end
