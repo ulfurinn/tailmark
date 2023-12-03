@@ -26,17 +26,23 @@ defmodule Tailmark.Parser do
 
   @lineEnding ~r/\r\n|\n|\r/
   @atxHeadingMarker ~r/^\#{1,6}(?:[ \t]+|$)/
+  @setextHeadingMarker ~r/^(?:=+|-+)[ \t]*$/
   @codeFenceMarker ~r/^`{3,}(?!.*`)|^~{3,}/
   @codeFenceEnd ~r/^(?:`{3,}|~{3,})(?=[ \t]*$)/
   @break ~r/^(?:\*[ \t]*){3,}$|^(?:_[ \t]*){3,}$|^(?:-[ \t]*){3,}$/
 
-  def document(md) do
+  def document(md, opts \\ []) do
     lines =
       md
       |> String.split(@lineEnding)
       |> drop_last_empty_line()
 
-    {frontmatter, lines} = parse_frontmatter(lines)
+    {frontmatter, lines} =
+      if Keyword.get(opts, :frontmatter, true) do
+        parse_frontmatter(lines)
+      else
+        {nil, lines}
+      end
 
     document = %Document{
       ref: make_ref(),
@@ -386,7 +392,37 @@ defmodule Tailmark.Parser do
   end
 
   defp start_html(state, _container), do: not_matched(state)
-  defp start_setext_heading(state, _container), do: not_matched(state)
+
+  defp start_setext_heading(state, container) do
+    if !indented?(state) && container.type == :paragraph do
+      match = Regex.run(@setextHeadingMarker, rest(state, :next_nonspace))
+
+      case match do
+        [marker] ->
+          state =
+            state
+            |> close_unmatched()
+
+          # TODO: update reference link definitions
+          if container.content != "" do
+            state
+            |> update_node(container.ref, fn node, _ ->
+              level = if match?("=" <> _, marker), do: 1, else: 2
+              %{node | type: :heading, level: level, content: String.trim_trailing(node.content)}
+            end)
+            |> advance_offset(String.length(state.current_line) - state.offset, false)
+            |> leaf()
+          else
+            not_matched(state)
+          end
+
+        _ ->
+          not_matched(state)
+      end
+    else
+      not_matched(state)
+    end
+  end
 
   defp start_break(state, _container) do
     if !indented?(state) && Regex.match?(@break, rest(state, :next_nonspace)) do

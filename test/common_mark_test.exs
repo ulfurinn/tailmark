@@ -39,7 +39,8 @@ defmodule Tailmark.CommonMarkTest do
           end
 
           assert example["html"] ==
-                   [example["markdown"] |> document() |> to_html()] |> IO.iodata_to_binary()
+                   [example["markdown"] |> document(frontmatter: false) |> to_html()]
+                   |> IO.iodata_to_binary()
 
           register_success(pid, section)
         end

@@ -30,11 +30,11 @@ The main use case for this project is [Tall Tale](https://github.com/ulfurinn/ta
 | Code spans | 22 | 3 (**13.6 %**) |
 | Emphasis and strong emphasis | 131 | 37 (**28.2 %**) |
 | Entity and numeric character references | 17 | 1 (**5.9 %**) |
-| Fenced code blocks | 29 | 19 (**65.5 %**) |
+| Fenced code blocks | 29 | 20 (**69.0 %**) |
 | HTML blocks | 44 | 1 (**2.3 %**) |
 | Hard line breaks | 15 | 5 (**33.3 %**) |
 | Images | 22 | 0 (**0.0 %**) |
-| Indented code blocks | 12 | 8 (**66.7 %**) |
+| Indented code blocks | 12 | 9 (**75.0 %**) |
 | Inlines | 1 | 0 (**0.0 %**) |
 | Link reference definitions | 27 | 5 (**18.5 %**) |
 | Links | 90 | 12 (**13.3 %**) |
@@ -43,12 +43,12 @@ The main use case for this project is [Tall Tale](https://github.com/ulfurinn/ta
 | Paragraphs | 8 | 7 (**87.5 %**) |
 | Precedence | 1 | 0 (**0.0 %**) |
 | Raw HTML | 21 | 12 (**57.1 %**) |
-| Setext headings | 27 | 10 (**37.0 %**) |
+| Setext headings | 27 | 19 (**70.4 %**) |
 | Soft line breaks | 2 | 1 (**50.0 %**) |
 | Tabs | 11 | 7 (**63.6 %**) |
 | Textual content | 3 | 3 (**100.0 %**) |
-| Thematic breaks | 19 | 14 (**73.7 %**) |
-| **TOTAL** | 652 | 196 (**30.1 %**) |
+| Thematic breaks | 19 | 15 (**78.9 %**) |
+| **TOTAL** | 652 | 208 (**31.9 %**) |
 
 ### Extensions
 
