@@ -28,6 +28,7 @@ defmodule Tailmark.Parser do
   @atxHeadingMarker ~r/^\#{1,6}(?:[ \t]+|$)/
   @codeFenceMarker ~r/^`{3,}(?!.*`)|^~{3,}/
   @codeFenceEnd ~r/^(?:`{3,}|~{3,})(?=[ \t]*$)/
+  @break ~r/^(?:\*[ \t]*){3,}$|^(?:_[ \t]*){3,}$|^(?:-[ \t]*){3,}$/
 
   def document(md) do
     lines =
@@ -120,8 +121,7 @@ defmodule Tailmark.Parser do
 
         state.offset < String.length(state.current_line) && !state.blank ->
           state
-          |> add_child(:paragraph, state.offset)
-          |> elem(1)
+          |> add_child(:paragraph, :offset)
           |> advance_next_nonspace()
           |> add_line()
 
@@ -138,7 +138,7 @@ defmodule Tailmark.Parser do
 
         state
         |> inc_offset(1)
-        |> update_node(state.tip, fn node ->
+        |> update_node(state.tip, fn node, _ ->
           %{node | content: node.content <> String.duplicate(" ", spaces)}
         end)
       else
@@ -146,7 +146,7 @@ defmodule Tailmark.Parser do
       end
 
     state
-    |> update_node(state.tip, fn node ->
+    |> update_node(state.tip, fn node, _ ->
       line = rest(state, :offset)
 
       %{node | content: node.content <> line <> "\n"}
@@ -213,8 +213,8 @@ defmodule Tailmark.Parser do
     end
   end
 
-  defp continue(state, %{type: :document}), do: {:matched, state}
-  defp continue(state, %{type: :list}), do: {:matched, state}
+  defp continue(state, %{type: :document}), do: matched(state)
+  defp continue(state, %{type: :list}), do: matched(state)
 
   defp continue(
          state,
@@ -251,7 +251,7 @@ defmodule Tailmark.Parser do
             end
           end)
 
-        {:matched, state}
+        matched(state)
     end
   end
 
@@ -263,16 +263,17 @@ defmodule Tailmark.Parser do
         |> advance_offset(1, false)
         |> advance_offset_if_space_or_tab(:offset, 1, true)
 
-      {:matched, state}
+      matched(state)
     else
-      {:not_matched, state}
+      not_matched(state)
     end
   end
 
-  defp continue(state, %{type: :heading}), do: {:not_matched, state}
+  defp continue(state, %{type: :heading}), do: not_matched(state)
+  defp continue(state, %{type: :break}), do: not_matched(state)
 
   defp continue(state, %{type: :paragraph}) do
-    if state.blank, do: {:not_matched, state}, else: {:matched, state}
+    if state.blank, do: not_matched(state), else: matched(state)
   end
 
   defp can_contain(:document, type), do: type != :item
@@ -287,18 +288,15 @@ defmodule Tailmark.Parser do
 
   defp start_blockquote(state, _container) do
     if !indented?(state) && peek(state, :next_nonspace) == ">" do
-      state =
-        state
-        |> advance_next_nonspace()
-        |> advance_offset(1, false)
-        |> advance_offset_if_space_or_tab(:offset, 1, true)
-        |> close_unmatched()
-        |> add_child(:blockquote, state.next_nonspace)
-        |> elem(1)
-
-      {:container, state}
+      state
+      |> advance_next_nonspace()
+      |> advance_offset(1, false)
+      |> advance_offset_if_space_or_tab(:offset, 1, true)
+      |> close_unmatched()
+      |> add_child(:blockquote, :next_nonspace)
+      |> container()
     else
-      {:not_matched, state}
+      not_matched(state)
     end
   end
 
@@ -311,34 +309,27 @@ defmodule Tailmark.Parser do
 
       case match do
         [marker] ->
-          state =
-            state
-            |> advance_next_nonspace()
-            |> advance_offset(String.length(marker), false)
-            |> close_unmatched()
+          state
+          |> advance_next_nonspace()
+          |> advance_offset(String.length(marker), false)
+          |> close_unmatched()
+          |> add_child(:heading, :next_nonspace, fn heading, state ->
+            content =
+              state
+              |> rest(:offset)
+              |> then(&Regex.replace(~r/^[ \t]*#+[ \t]*$/, &1, ""))
+              |> then(&Regex.replace(~r/[ \t]+#+[ \t]*$/, &1, ""))
 
-          {container, state} = state |> add_child(:heading, state.next_nonspace)
-
-          state =
-            state
-            |> update_node(container.ref, fn heading ->
-              content =
-                state
-                |> rest(:offset)
-                |> then(&Regex.replace(~r/^[ \t]*#+[ \t]*$/, &1, ""))
-                |> then(&Regex.replace(~r/[ \t]+#+[ \t]*$/, &1, ""))
-
-              %{heading | level: marker |> String.trim() |> String.length(), content: content}
-            end)
-            |> advance_offset(String.length(state.current_line) - state.offset, false)
-
-          {:leaf, state}
+            %{heading | level: marker |> String.trim() |> String.length(), content: content}
+          end)
+          |> then(&(&1 |> advance_offset(String.length(&1.current_line) - &1.offset, false)))
+          |> leaf()
 
         _ ->
-          {:not_matched, state}
+          not_matched(state)
       end
     else
-      {:not_matched, state}
+      not_matched(state)
     end
   end
 
@@ -353,46 +344,52 @@ defmodule Tailmark.Parser do
         [marker] ->
           fence_length = String.length(marker)
 
-          {container, state} =
-            state
-            |> close_unmatched()
-            |> add_child(:code, state.next_nonspace)
-
-          state =
-            state
-            |> update_node(container.ref, fn code ->
-              %{
-                code
-                | fenced: true,
-                  fence_length: fence_length,
-                  fence_char: String.at(marker, 0),
-                  fence_offset: state.indent
-              }
-            end)
-            |> advance_next_nonspace()
-            |> advance_offset(fence_length, false)
-
-          {:leaf, state}
+          state
+          |> close_unmatched()
+          |> add_child(:code, :next_nonspace, fn code, state ->
+            %{
+              code
+              | fenced: true,
+                fence_length: fence_length,
+                fence_char: String.at(marker, 0),
+                fence_offset: state.indent
+            }
+          end)
+          |> advance_next_nonspace()
+          |> advance_offset(fence_length, false)
+          |> leaf()
 
         _ ->
-          {:not_matched, state}
+          not_matched(state)
       end
     else
-      {:not_matched, state}
+      not_matched(state)
     end
   end
 
-  defp start_html(state, _container), do: {:not_matched, state}
-  defp start_setext_heading(state, _container), do: {:not_matched, state}
-  defp start_break(state, _container), do: {:not_matched, state}
-  defp start_list_item(state, _container), do: {:not_matched, state}
-  defp start_indented_code(state, _container), do: {:not_matched, state}
+  defp start_html(state, _container), do: not_matched(state)
+  defp start_setext_heading(state, _container), do: not_matched(state)
+
+  defp start_break(state, _container) do
+    if !indented?(state) && Regex.match?(@break, rest(state, :next_nonspace)) do
+      state
+      |> close_unmatched()
+      |> add_child(:break, :next_nonspace)
+      |> then(&advance_offset(&1, String.length(&1.current_line) - &1.offset, false))
+      |> leaf()
+    else
+      state |> not_matched()
+    end
+  end
+
+  defp start_list_item(state, _container), do: not_matched(state)
+  defp start_indented_code(state, _container), do: not_matched(state)
 
   defp finalize(state, node, _line_number) do
     above = node.parent
 
     state
-    |> update_node(node.ref, fn node ->
+    |> update_node(node.ref, fn node, _ ->
       %{node | open?: false}
       |> finalize()
     end)
@@ -424,6 +421,7 @@ defmodule Tailmark.Parser do
 
   defp finalize(node = %{type: :blockquote}), do: node
   defp finalize(node = %{type: :paragraph}), do: node
+  defp finalize(node = %{type: :break}), do: node
 
   defp finalize_until_can_accept_type(state, type) do
     if can_contain(state.nodes[state.tip].type, type) do
@@ -435,7 +433,7 @@ defmodule Tailmark.Parser do
     end
   end
 
-  defp add_child(state, type, _offset) do
+  defp add_child(state, type, _offset, constructor \\ fn node, _state -> node end) do
     state =
       state
       |> finalize_until_can_accept_type(type)
@@ -443,13 +441,11 @@ defmodule Tailmark.Parser do
     # column_number = offset + 1
     node = %Node{ref: make_ref(), type: type, parent: state.tip}
 
-    state =
-      state
-      |> put_node(node)
-      |> update_node(state.tip, fn tip -> %{tip | children: tip.children ++ [node.ref]} end)
-      |> put_tip(node.ref)
-
-    {node, state}
+    state
+    |> put_node(node)
+    |> update_node(state.tip, fn tip, _ -> %{tip | children: tip.children ++ [node.ref]} end)
+    |> put_tip(node.ref)
+    |> update_node(node.ref, constructor)
   end
 
   defp indented?(state) do
@@ -623,6 +619,11 @@ defmodule Tailmark.Parser do
   defp inc_offset(state, offset), do: %{state | offset: state.offset + offset}
 
   defp update_node(state, ref, fun) do
-    %{state | nodes: Map.update!(state.nodes, ref, fun)}
+    %{state | nodes: Map.update!(state.nodes, ref, fn node -> fun.(node, state) end)}
   end
+
+  defp matched(state), do: {:matched, state}
+  defp not_matched(state), do: {:not_matched, state}
+  defp container(state), do: {:container, state}
+  defp leaf(state), do: {:leaf, state}
 end

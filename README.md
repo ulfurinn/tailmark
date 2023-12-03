@@ -22,11 +22,11 @@ The main use case for this project is [Tall Tale](https://github.com/ulfurinn/ta
 
 | Section | Total | Passed |
 | ------- | ----- | ------ |
-| ATX headings | 18 | 12 (**66.7 %**) |
+| ATX headings | 18 | 13 (**72.2 %**) |
 | Autolinks | 19 | 2 (**10.5 %**) |
 | Backslash escapes | 13 | 2 (**15.4 %**) |
 | Blank lines | 1 | 1 (**100.0 %**) |
-| Block quotes | 25 | 19 (**76.0 %**) |
+| Block quotes | 25 | 21 (**84.0 %**) |
 | Code spans | 22 | 3 (**13.6 %**) |
 | Emphasis and strong emphasis | 131 | 37 (**28.2 %**) |
 | Entity and numeric character references | 17 | 1 (**5.9 %**) |
@@ -43,12 +43,12 @@ The main use case for this project is [Tall Tale](https://github.com/ulfurinn/ta
 | Paragraphs | 8 | 6 (**75.0 %**) |
 | Precedence | 1 | 0 (**0.0 %**) |
 | Raw HTML | 21 | 12 (**57.1 %**) |
-| Setext headings | 27 | 3 (**11.1 %**) |
+| Setext headings | 27 | 8 (**29.6 %**) |
 | Soft line breaks | 2 | 1 (**50.0 %**) |
-| Tabs | 11 | 1 (**9.1 %**) |
+| Tabs | 11 | 2 (**18.2 %**) |
 | Textual content | 3 | 3 (**100.0 %**) |
-| Thematic breaks | 19 | 5 (**26.3 %**) |
-| **TOTAL** | 652 | 156 (**23.9 %**) |
+| Thematic breaks | 19 | 13 (**68.4 %**) |
+| **TOTAL** | 652 | 173 (**26.5 %**) |
 
 ### Extensions
 

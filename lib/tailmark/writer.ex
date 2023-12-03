@@ -30,4 +30,8 @@ defmodule Tailmark.Writer do
   def to_html(%Node{type: :paragraph, content: content}) do
     ["<p>", String.trim_trailing(content), "</p>\n"]
   end
+
+  def to_html(%Node{type: :break}) do
+    ["<hr />\n"]
+  end
 end
