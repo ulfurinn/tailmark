@@ -1,5 +1,5 @@
 defmodule Tailmark.Node.Paragraph do
-  defstruct [:sourcepos, :ref, :parent, content: "", block: true, open?: true]
+  defstruct [:sourcepos, :ref, :parent, children: [], content: "", block: true, open?: true]
 
   def new(parent, sourcepos),
     do: %__MODULE__{sourcepos: sourcepos, ref: make_ref(), parent: parent}

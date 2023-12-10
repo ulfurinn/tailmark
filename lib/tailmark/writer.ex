@@ -14,12 +14,16 @@ defmodule Tailmark.Writer do
 
   def to_html(nodes) when is_list(nodes), do: nodes |> Enum.map(&to_html/1)
 
-  def to_html(%Node.Heading.ATX{level: level, content: content}) do
-    ["\n", "<h#{level}>", content, "</h#{level}>", "\n"]
+  def to_html(%Node.Text{content: content}), do: content
+  def to_html(%Node.Linebreak{hard: true}), do: ["<br />", "\n"]
+  def to_html(%Node.Linebreak{hard: false}), do: ["\n"]
+
+  def to_html(%Node.Heading.ATX{level: level, children: children}) do
+    ["\n", "<h#{level}>", to_html(children), "</h#{level}>", "\n"]
   end
 
-  def to_html(%Node.Heading.Setext{level: level, content: content}) do
-    ["\n", "<h#{level}>", content, "</h#{level}>", "\n"]
+  def to_html(%Node.Heading.Setext{level: level, children: children}) do
+    ["\n", "<h#{level}>", to_html(children), "</h#{level}>", "\n"]
   end
 
   def to_html(%Node.Code.Fenced{content: content, info: nil}) do
@@ -66,12 +70,12 @@ defmodule Tailmark.Writer do
     ["\n", "<blockquote>", "\n", to_html(children), "\n", "</blockquote>", "\n"]
   end
 
-  def to_html(%Node.Paragraph{content: content, block: true}) do
-    ["\n", "<p>", String.trim_trailing(content), "</p>", "\n"]
+  def to_html(%Node.Paragraph{children: children, block: true}) do
+    ["\n", "<p>", to_html(children), "</p>", "\n"]
   end
 
-  def to_html(%Node.Paragraph{content: content, block: false}) do
-    String.trim_trailing(content)
+  def to_html(%Node.Paragraph{children: children, block: false}) do
+    to_html(children)
   end
 
   def to_html(%Node.Break{}) do

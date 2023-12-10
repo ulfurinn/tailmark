@@ -1,4 +1,5 @@
 defmodule Tailmark.Parser do
+  alias Tailmark.InlineParser
   alias Tailmark.Document
   alias Tailmark.ParseNode
 
@@ -63,6 +64,7 @@ defmodule Tailmark.Parser do
     }
     |> parse_blocks(lines)
     |> finalize_document()
+    |> parse_inlines()
     |> substitute_tree_refs()
     |> then(& &1.document)
   end
@@ -151,7 +153,7 @@ defmodule Tailmark.Parser do
 
         state
         |> inc_offset(1)
-        |> update_node(state.tip, fn node, _ ->
+        |> update_node(state.tip, fn node ->
           %{node | content: node.content <> String.duplicate(" ", spaces)}
         end)
       else
@@ -159,7 +161,7 @@ defmodule Tailmark.Parser do
       end
 
     state
-    |> update_node(state.tip, fn node, _ ->
+    |> update_node(state.tip, fn node ->
       line = rest(state, :offset)
 
       %{node | content: node.content <> line <> "\n"}
@@ -267,7 +269,7 @@ defmodule Tailmark.Parser do
     end
   end
 
-  def add_child(state, module, position, constructor \\ fn node, _state -> node end) do
+  def add_child(state, module, position, constructor \\ & &1) do
     state =
       state
       |> finalize_until_can_accept_type(module)
@@ -288,9 +290,15 @@ defmodule Tailmark.Parser do
 
     state
     |> put_node(node)
-    |> update_node(state.tip, fn tip, _ -> %{tip | children: tip.children ++ [node.ref]} end)
+    |> update_node(state.tip, fn tip -> %{tip | children: tip.children ++ [node.ref]} end)
     |> put_tip(node.ref)
     |> update_node(node.ref, constructor)
+  end
+
+  def append_child(state, ref, child) do
+    state
+    |> put_node(child)
+    |> update_node(ref, fn node -> %{node | children: node.children ++ [child.ref]} end)
   end
 
   defp drop_last_empty_line(lines) do
@@ -453,6 +461,32 @@ defmodule Tailmark.Parser do
     |> close_deepest_unmatched()
   end
 
+  defp parse_inlines(state) do
+    state |> parse_inlines(state.document)
+  end
+
+  defp parse_inlines(state, ref) when is_reference(ref) do
+    node = state.nodes[ref]
+
+    case node do
+      %{children: children} ->
+        children
+        |> Enum.reduce(state, &parse_inlines(&2, &1))
+
+      _ ->
+        state
+    end
+    |> update_node(ref, &parse_inlines(&2, &1))
+  end
+
+  defp parse_inlines(state, node = %{content: _}) do
+    InlineParser.parse(node, state)
+  end
+
+  defp parse_inlines(state, node) do
+    {node, state}
+  end
+
   def put_offset(state, value), do: %{state | offset: value}
   def put_column(state, value), do: %{state | column: value}
   defp put_current_line(state, value), do: %{state | current_line: value}
@@ -472,11 +506,18 @@ defmodule Tailmark.Parser do
   defp inc_column(state, column), do: %{state | column: state.column + column}
   defp inc_offset(state, offset), do: %{state | offset: state.offset + offset}
 
+  def get_node(%__MODULE__{}, nil), do: nil
   def get_node(%__MODULE__{nodes: nodes}, ref), do: nodes[ref]
 
-  def update_node(state, ref, fun) do
+  def update_node(state, ref, fun) when is_reference(ref) do
     node = state.nodes[ref]
-    updated = fun.(node, state)
+
+    updated =
+      cond do
+        is_function(fun, 1) -> fun.(node)
+        is_function(fun, 2) -> fun.(node, state)
+        true -> raise "invalid arity in update_node callback"
+      end
 
     case updated do
       {node, state} ->
@@ -486,6 +527,8 @@ defmodule Tailmark.Parser do
         %{state | nodes: Map.put(state.nodes, ref, node)}
     end
   end
+
+  def update_node(state, node, fun), do: update_node(state, node.ref, fun)
 
   def indented?(state), do: state.indent >= @codeIndent
   def blank?(%__MODULE__{blank: blank}), do: blank

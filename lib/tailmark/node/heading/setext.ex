@@ -1,5 +1,5 @@
 defmodule Tailmark.Node.Heading.Setext do
-  defstruct [:sourcepos, :ref, :parent, level: 1, content: "", open?: true]
+  defstruct [:sourcepos, :ref, :parent, children: [], level: 1, content: "", open?: true]
 
   def new(parent, sourcepos),
     do: %__MODULE__{sourcepos: sourcepos, ref: make_ref(), parent: parent}
@@ -22,7 +22,7 @@ defmodule Tailmark.Node.Heading.Setext do
             # TODO: update reference link definitions
             if container.content != "" do
               parser
-              |> update_node(container.ref, fn node, _ ->
+              |> update_node(container.ref, fn node ->
                 %@for{
                   sourcepos: node.sourcepos,
                   ref: node.ref,

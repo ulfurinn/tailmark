@@ -7,6 +7,7 @@ defmodule Tailmark.Node.Code.Fenced do
     :fence_char,
     :fence_length,
     :fence_offset,
+    children: [],
     content: "",
     info: nil,
     open?: true

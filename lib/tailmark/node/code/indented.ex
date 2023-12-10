@@ -1,5 +1,5 @@
 defmodule Tailmark.Node.Code.Indented do
-  defstruct [:sourcepos, :ref, :parent, content: "", open?: true]
+  defstruct [:sourcepos, :ref, :parent, children: [], content: "", open?: true]
 
   def new(parent, sourcepos),
     do: %__MODULE__{sourcepos: sourcepos, ref: make_ref(), parent: parent}

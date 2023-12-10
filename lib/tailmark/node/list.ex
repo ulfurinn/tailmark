@@ -62,7 +62,7 @@ defmodule Tailmark.Node.List do
         |> Enum.reduce(parser, fn child_ref, parser ->
           if parser.nodes[child_ref].__struct__ == Tailmark.Node.Paragraph do
             parser
-            |> update_node(child_ref, fn child, _ ->
+            |> update_node(child_ref, fn child ->
               %Tailmark.Node.Paragraph{child | block: false}
             end)
           else

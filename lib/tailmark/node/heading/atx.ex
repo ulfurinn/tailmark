@@ -1,5 +1,5 @@
 defmodule Tailmark.Node.Heading.ATX do
-  defstruct [:sourcepos, :ref, :parent, level: 1, content: "", open?: true]
+  defstruct [:sourcepos, :ref, :parent, children: [], level: 1, content: "", open?: true]
 
   def new(parent, sourcepos),
     do: %__MODULE__{sourcepos: sourcepos, ref: make_ref(), parent: parent}

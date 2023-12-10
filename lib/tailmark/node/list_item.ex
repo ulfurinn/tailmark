@@ -26,7 +26,7 @@ defmodule Tailmark.Node.ListItem do
           if tip(parser).__struct__ != Tailmark.Node.List ||
                !list_match(container.list_data, list_data) do
             parser
-            |> add_child(Tailmark.Node.List, :next_nonspace, fn list, _ ->
+            |> add_child(Tailmark.Node.List, :next_nonspace, fn list ->
               %Tailmark.Node.List{list | list_data: list_data}
             end)
           else
@@ -34,7 +34,7 @@ defmodule Tailmark.Node.ListItem do
           end
 
         parser
-        |> add_child(@for, :next_nonspace, fn list, _ ->
+        |> add_child(@for, :next_nonspace, fn list ->
           %@for{list | list_data: list_data}
         end)
         |> container()
