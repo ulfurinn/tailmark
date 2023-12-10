@@ -3,7 +3,8 @@ defmodule Tailmark.InlineParser do
 
   defstruct [:node, :parser, :subject, :pos, :delimeters, :brackets]
 
-  @main ~r/^[^\n`\[\]\\!<&*_'"]+/m
+  @main ~r/^[^\n`\[\]\\!<&*_]+/m
+  @escapable ~r/^[!"#$%&'()*+,.\/:;<=>?@[\\\]^_`{|}~-]/
   @initialSpace ~r/^ */
   @finalSpace ~r/ *$/
 
@@ -59,6 +60,27 @@ defmodule Tailmark.InlineParser do
         state |> append_child(Tailmark.Node.Linebreak.new(false))
     end
     |> consume(@initialSpace)
+    |> result(true)
+  end
+
+  defp parse_inline(state, "\\") do
+    state = state |> advance()
+
+    cond do
+      peek(state) == "\n" ->
+        state
+        |> advance()
+        |> append_child(Tailmark.Node.Linebreak.new(true))
+
+      peek(state) && Regex.match?(@escapable, peek(state)) ->
+        state
+        |> append_child(Tailmark.Node.Text.new(peek(state)))
+        |> advance()
+
+      true ->
+        state
+        |> append_child(Tailmark.Node.Text.new("\\"))
+    end
     |> result(true)
   end
 
