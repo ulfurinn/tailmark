@@ -19,7 +19,7 @@ This is mostly a direct translation of commonmark.js into Elixir.
 | Code spans | 22 | 18 (81.8 %) |
 | Emphasis and strong emphasis | 131 | 124 (**94.7 %**) |
 | Entity and numeric character references | 17 | 4 (23.5 %) |
-| Fenced code blocks | 29 | 23 (79.3 %) |
+| Fenced code blocks | 29 | 27 (**93.1 %**) |
 | HTML blocks | 44 | 0 (0.0 %) |
 | Hard line breaks | 15 | 13 (86.7 %) |
 | Images | 22 | 5 (22.7 %) |
@@ -38,4 +38,4 @@ This is mostly a direct translation of commonmark.js into Elixir.
 | Textual content | 3 | 3 (**100.0 %**) |
 | Thematic breaks | 19 | 19 (**100.0 %**) |
 | Wikilinks | 2 | 2 (**100.0 %**) |
-| **TOTAL** | 657 | 454 (69.1 %) |
+| **TOTAL** | 657 | 458 (69.7 %) |

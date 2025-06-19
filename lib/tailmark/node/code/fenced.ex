@@ -21,15 +21,12 @@ defmodule Tailmark.Node.Code.Fenced do
   defimpl Tailmark.ParseNode do
     import Tailmark.Parser
 
-    @marker ~r/^`{3,}(?!.*`)|^~{3,}/
-    @endMarker ~r/^(?:`{3,}|~{3,})(?=[ \t]*$)/
-
     def start(_, parser, _) do
       if !indented?(parser) do
         match =
           parser
           |> rest(:next_nonspace)
-          |> re_run(@marker)
+          |> re_run(parser.re.fenced_code_start_marker)
 
         case match do
           [marker] ->
@@ -69,7 +66,7 @@ defmodule Tailmark.Node.Code.Fenced do
       with true <-
              parser.indent <= 3 &&
                peek(parser, :next_nonspace) == fence_char,
-           [marker] <- Regex.run(@endMarker, rest(parser, :next_nonspace)),
+           [marker] <- Regex.run(parser.re.fenced_code_end_marker, rest(parser, :next_nonspace)),
            true <- String.length(marker) >= fence_length do
         # put last line length
         parser
@@ -77,7 +74,7 @@ defmodule Tailmark.Node.Code.Fenced do
         |> line_finished()
       else
         _ ->
-          1..fence_offset
+          1..fence_offset//1
           |> Enum.reduce_while(parser, fn _, parser ->
             if parser |> peek(:offset) |> space_or_tab?() do
               {:cont, parser |> advance_offset(1, true)}

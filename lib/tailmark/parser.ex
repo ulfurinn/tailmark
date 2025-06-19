@@ -5,6 +5,7 @@ defmodule Tailmark.Parser do
   alias Tailmark.ParseNode
 
   defstruct [
+    :re,
     :document,
     :tree,
     :tip,
@@ -25,12 +26,11 @@ defmodule Tailmark.Parser do
   ]
 
   @codeIndent 4
-  @lineEnding ~r/\r\n|\n|\r/
 
   def document(md, opts \\ []) do
     lines =
       md
-      |> String.split(@lineEnding)
+      |> String.split(~r/\r\n|\n|\r/)
       |> drop_last_empty_line()
 
     {frontmatter, lines} =
@@ -54,6 +54,7 @@ defmodule Tailmark.Parser do
     }
 
     %__MODULE__{
+      re: Tailmark.RE.new(),
       node_impls: [
         Tailmark.Node.Blockquote,
         Tailmark.Node.Heading.ATX,
@@ -471,23 +472,23 @@ defmodule Tailmark.Parser do
     |> close_deepest_unmatched()
   end
 
-  defp parse_inlines(state = %__MODULE__{document: document, tree: tree}) do
-    %__MODULE__{state | tree: parse_inlines(tree, document)}
+  defp parse_inlines(state = %__MODULE__{re: re, document: document, tree: tree}) do
+    %__MODULE__{state | tree: parse_inlines(tree, document, re)}
   end
 
-  defp parse_inlines(tree, ref) when is_reference(ref) do
+  defp parse_inlines(tree, ref, re) when is_reference(ref) do
     node = Doctree.get_node(tree, ref)
 
     tree =
       case node do
         %{children: children} ->
-          Enum.reduce(children, tree, &parse_inlines(&2, &1))
+          Enum.reduce(children, tree, &parse_inlines(&2, &1, re))
 
         _ ->
           tree
       end
 
-    InlineParser.parse(node, tree)
+    InlineParser.parse(node, tree, re)
   end
 
   def put_offset(state, value), do: %{state | offset: value}

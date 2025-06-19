@@ -10,9 +10,6 @@ defmodule Tailmark.Node.ListItem do
     alias Tailmark.Node.List.Data
 
     @codeIndent 4
-    @nonSpace ~r/[^ \t\f\v\r\n]/
-    @bulletMarker ~r/^[*+-]/
-    @orderedMarker ~r/^(\d{1,9})([.)])/
 
     def start(_, parser, container) do
       with true <- !indented?(parser) || container.__struct__ == Tailmark.Node.List,
@@ -89,8 +86,8 @@ defmodule Tailmark.Node.ListItem do
       rest = rest(parser, :next_nonspace)
 
       if parser.indent < @codeIndent do
-        bullet_match = Regex.run(@bulletMarker, rest)
-        ordered_match = Regex.run(@orderedMarker, rest)
+        bullet_match = Regex.run(parser.re.list_item_bullet_marker, rest)
+        ordered_match = Regex.run(parser.re.list_item_ordered_marker, rest)
         container_mod = container.__struct__
 
         case {bullet_match, ordered_match} do
@@ -137,7 +134,10 @@ defmodule Tailmark.Node.ListItem do
 
     defp ensure_non_blank_if_breaking_paragraph(data, parser, container) do
       if container.__struct__ == Tailmark.Node.Paragraph &&
-           !Regex.match?(@nonSpace, rest(parser, :next_nonspace, data.marker_length)) do
+           !Regex.match?(
+             parser.re.list_item_non_space,
+             rest(parser, :next_nonspace, data.marker_length)
+           ) do
         nil
       else
         data

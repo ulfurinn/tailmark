@@ -8,38 +8,20 @@ defmodule Tailmark.InlineParser do
     defstruct [:node, :position, :embed?, :delimiter_base, wiki?: false]
   end
 
-  defstruct [:node, :tree, :subject, :pos, :delimiters, :brackets]
-
-  @escapable_def "[!\"#$%&'()*+,.\\/:;<=>?@[\\]^_`{|}~-]"
-  @entity_def "&(?:#x[a-f0-9]{1,6}|#[0-9]{1,7}|[a-z][a-z0-9]{1,31});"
-  @main ~r/^[^\n`\[\]\\!<&*_]+/
-  @escapable ~r/^#{@escapable_def}/
-  @initial_space ~r/^ */
-  @final_space ~r/ *$/
-  @ticks_here ~r/^`+/
-  @ticks ~r/^[^`]*(?<goal>`+)/
-  @spnl ~r/^ *(?:\n *)?/
-  @link_destination_braces ~r/^<(?<goal>(?:[^<>\n\\\x00]|\\.)*)>/
-  @link_title ~r/^(?:"(?<goal1>(\\#{@escapable_def}|\\[^\\]|[^\\"\x00])*)"|'(?<goal2>(\\#{@escapable_def}|\\[^\\]|[^\\'\x00])*)'|\((?<goal3>(\\#{@escapable_def}|\\[^\\]|[^\\()\x00])*)\))/
-  @entity ~r/^#{@entity_def}/i
-  @whitespace_char ~r/^[ \t\n\x0b\x0c\x0d]/
-  @unicode_whitespace_char ~r/^\s/u
-  @punctuation ~r/^\p{P}/u
-  @backslash_or_amp ~r/[\\&]/
-  @entity_or_escaped ~r/\\#{@escapable_def}|#{@entity_def}/
-  @callout ~r/^\[!(?<type>[a-z0-9-]+)(\|(?<meta>[a-z0-9-]+))?\]\s*?(?<title>[^\n]+)?(\n|$)/ui
+  defstruct [:re, :node, :tree, :subject, :pos, :delimiters, :brackets]
 
   def parse(text) when is_binary(text) do
     node = Paragraph.new(text)
     tree = Doctree.new(node)
 
-    parse(node, tree)
+    parse(node, tree, Tailmark.RE.new())
     |> Doctree.flatten_refs()
   end
 
-  def parse(node = %{content: _}, tree) do
+  def parse(node = %{content: _}, tree, re) do
     state =
       %__MODULE__{
+        re: re,
         node: node.ref,
         tree: tree,
         subject: String.trim(node.content),
@@ -53,7 +35,7 @@ defmodule Tailmark.InlineParser do
     state.tree
   end
 
-  def parse(_, tree), do: tree
+  def parse(_, tree, _), do: tree
 
   defp parse_inline(state) do
     c = peek(state)
@@ -88,14 +70,14 @@ defmodule Tailmark.InlineParser do
 
       state
       |> update_node(last_child.ref, fn node ->
-        %{node | content: Regex.replace(@final_space, node.content, "")}
+        %{node | content: Regex.replace(state.re.inline_final_space, node.content, "")}
       end)
       |> append_child(Tailmark.Node.Linebreak.new(hard_break))
     else
       _ ->
         state |> append_child(Tailmark.Node.Linebreak.new(false))
     end
-    |> consume(@initial_space)
+    |> consume(state.re.inline_initial_space)
     |> result(true)
   end
 
@@ -108,7 +90,7 @@ defmodule Tailmark.InlineParser do
         |> advance()
         |> append_child(Tailmark.Node.Linebreak.new(true))
 
-      peek(state) && Regex.match?(@escapable, peek(state)) ->
+      peek(state) && Regex.match?(state.re.inline_escapable, peek(state)) ->
         state
         |> append_child(Tailmark.Node.Text.new(peek(state)))
         |> advance()
@@ -121,7 +103,7 @@ defmodule Tailmark.InlineParser do
   end
 
   defp parse_inline(state, "`") do
-    {state, match} = extract(state, @ticks_here)
+    {state, match} = extract(state, state.re.inline_ticks_here)
 
     if match do
       {state1, result} = match_closing_backtick(state, match, state.pos)
@@ -262,7 +244,7 @@ defmodule Tailmark.InlineParser do
   end
 
   defp parse_inline(state, "&") do
-    case extract(state, @entity) do
+    case extract(state, state.re.inline_entity) do
       {state, nil} ->
         state
         |> result(false)
@@ -277,7 +259,7 @@ defmodule Tailmark.InlineParser do
   end
 
   defp parse_inline(state, _) do
-    case extract(state, @main) do
+    case extract(state, state.re.inline_main) do
       {state, nil} ->
         state
         |> result(false)
@@ -290,9 +272,11 @@ defmodule Tailmark.InlineParser do
   end
 
   defp parse_callout(state) do
-    case extract(state, @callout) do
+    case extract(state, state.re.inline_callout) do
       {state, str} when is_binary(str) ->
-        [info, meta, title] = Regex.run(@callout, str, capture: ["type", "meta", "title"])
+        [info, meta, title] =
+          Regex.run(state.re.inline_callout, str, capture: ["type", "meta", "title"])
+
         {state, {info, empty_to_nil(meta), empty_to_nil(title)}}
 
       result ->
@@ -312,10 +296,10 @@ defmodule Tailmark.InlineParser do
       char_before = if state.pos == 0, do: "\n", else: peek(state, -1)
       char_after = peek(state, String.length(delim)) || "\n"
 
-      after_is_whitespace = Regex.match?(@unicode_whitespace_char, char_after)
-      after_is_punctuation = Regex.match?(@punctuation, char_after)
-      before_is_whitespace = Regex.match?(@unicode_whitespace_char, char_before)
-      before_is_punctuation = Regex.match?(@punctuation, char_before)
+      after_is_whitespace = Regex.match?(state.re.inline_unicode_whitespace_char, char_after)
+      after_is_punctuation = Regex.match?(state.re.inline_punctuation, char_after)
+      before_is_whitespace = Regex.match?(state.re.inline_unicode_whitespace_char, char_before)
+      before_is_punctuation = Regex.match?(state.re.inline_punctuation, char_before)
 
       left_flanking =
         !after_is_whitespace &&
@@ -346,7 +330,7 @@ defmodule Tailmark.InlineParser do
   end
 
   defp match_closing_backtick(state, opening, position) do
-    {state, match} = extract(state, @ticks)
+    {state, match} = extract(state, state.re.inline_ticks)
 
     if match do
       if match == opening do
@@ -444,13 +428,13 @@ defmodule Tailmark.InlineParser do
 
   defp try_match_inline_link(state = %__MODULE__{pos: pos}) do
     with "(" <- state |> peek(),
-         state <- state |> advance() |> consume(@spnl),
+         state <- state |> advance() |> consume(state.re.inline_spnl),
          {:ok, state, destination} <- state |> parse_link_destination(),
-         state <- state |> consume(@spnl),
+         state <- state |> consume(state.re.inline_spnl),
          {:ok, state, title} <- state |> parse_link_title(),
-         state <- state |> consume(@spnl),
+         state <- state |> consume(state.re.inline_spnl),
          ")" <- state |> peek() do
-      state |> advance() |> result(%{destination: unescape(destination), title: title})
+      state |> advance() |> result(%{destination: unescape(destination, state.re), title: title})
     else
       # TODO: refmap
       _ -> state |> rewind(pos) |> result(nil)
@@ -458,7 +442,7 @@ defmodule Tailmark.InlineParser do
   end
 
   defp parse_link_destination(state) do
-    case state |> extract(@link_destination_braces) do
+    case state |> extract(state.re.inline_link_destination_braces) do
       {state, nil} ->
         state |> parse_link_destination_manual()
 
@@ -488,7 +472,7 @@ defmodule Tailmark.InlineParser do
       c == nil ->
         {state, c, open_parens}
 
-      c == "\\" && state |> peek(1) |> match_str?(@escapable) ->
+      c == "\\" && state |> peek(1) |> match_str?(state.re.inline_escapable) ->
         state = state |> advance()
         state = if state |> peek(), do: state |> advance(), else: state
         parse_link_destination_manual(state, open_parens)
@@ -505,7 +489,7 @@ defmodule Tailmark.InlineParser do
           parse_link_destination_manual(state, open_parens - 1)
         end
 
-      c |> match_str?(@whitespace_char) ->
+      c |> match_str?(state.re.inline_whitespace_char) ->
         {state, c, open_parens}
 
       true ->
@@ -515,7 +499,7 @@ defmodule Tailmark.InlineParser do
   end
 
   defp parse_link_title(state) do
-    {state, result} = state |> extract(@link_title)
+    {state, result} = state |> extract(state.re.inline_link_title)
     {:ok, state, result}
   end
 
@@ -721,9 +705,9 @@ defmodule Tailmark.InlineParser do
     |> elem(0)
   end
 
-  defp unescape(str) do
-    if Regex.match?(@backslash_or_amp, str) do
-      Regex.replace(@entity_or_escaped, str, &unescape1/1)
+  defp unescape(str, re) do
+    if Regex.match?(re.inline_backslash_or_amp, str) do
+      Regex.replace(re.inline_entity_or_escaped, str, &unescape1/1)
     else
       str
     end

@@ -7,10 +7,8 @@ defmodule Tailmark.Node.Break do
   defimpl Tailmark.ParseNode do
     import Tailmark.Parser
 
-    @marker ~r/^(?:\*[ \t]*){3,}$|^(?:_[ \t]*){3,}$|^(?:-[ \t]*){3,}$/
-
     def start(_, parser, _) do
-      if !indented?(parser) && Regex.match?(@marker, rest(parser, :next_nonspace)) do
+      if !indented?(parser) && Regex.match?(parser.re.break_marker, rest(parser, :next_nonspace)) do
         parser
         |> close_unmatched()
         |> add_child(@for, :next_nonspace)

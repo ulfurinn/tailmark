@@ -7,11 +7,9 @@ defmodule Tailmark.Node.Heading.Setext do
   defimpl Tailmark.ParseNode do
     import Tailmark.Parser
 
-    @marker ~r/^(?:=+|-+)[ \t]*$/
-
     def start(_, parser, container) do
       if !indented?(parser) && container.__struct__ == Tailmark.Node.Paragraph do
-        match = Regex.run(@marker, rest(parser, :next_nonspace))
+        match = Regex.run(parser.re.setext_start_marker, rest(parser, :next_nonspace))
 
         case match do
           [marker] ->

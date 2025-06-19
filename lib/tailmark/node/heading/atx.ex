@@ -7,14 +7,12 @@ defmodule Tailmark.Node.Heading.ATX do
   defimpl Tailmark.ParseNode do
     import Tailmark.Parser
 
-    @marker ~r/^\#{1,6}(?:[ \t]+|$)/
-
     def start(_, parser, _) do
       if !indented?(parser) do
         match =
           parser
           |> rest(:next_nonspace)
-          |> re_run(@marker)
+          |> re_run(parser.re.atx_start_marker)
 
         case match do
           [marker] ->
@@ -26,8 +24,8 @@ defmodule Tailmark.Node.Heading.ATX do
               content =
                 parser
                 |> rest(:offset)
-                |> re_replace(~r/^[ \t]*#+[ \t]*$/, "")
-                |> re_replace(~r/[ \t]+#+[ \t]*$/, "")
+                |> re_replace(parser.re.atx_whitespaced_marker_1, "")
+                |> re_replace(parser.re.atx_whitespaced_marker_2, "")
 
               %{heading | level: marker |> String.trim() |> String.length(), content: content}
             end)
